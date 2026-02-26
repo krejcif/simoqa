@@ -18,3 +18,4 @@ npm test
 ## CI
 
 On every pull request, GitHub Actions runs the full test suite plus an automated security review powered by Claude Opus 4.6.
+# Test trigger
