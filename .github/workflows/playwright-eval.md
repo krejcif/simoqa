@@ -8,6 +8,7 @@ timeout-minutes: 20
 permissions:
   all: read
   discussions: read
+  id-token: none
 
 engine:
   id: claude
