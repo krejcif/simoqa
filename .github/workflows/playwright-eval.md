@@ -6,9 +6,10 @@ on:
 timeout-minutes: 20
 
 permissions:
-  all: read
-  discussions: read
-  id-token: none
+  contents: read
+  pull-requests: read
+  checks: read
+  actions: read
 
 engine:
   id: claude
@@ -22,54 +23,46 @@ tools:
   bash: [":*"]
   github:
     toolsets: [all]
-
-steps:
-  - name: Setup Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: 20
-      cache: npm
-
-  - name: Install dependencies
-    run: npm ci
-
-  - name: Install Playwright browsers
-    run: npx playwright install --with-deps chromium
-
-  - name: Run Playwright tests and capture output
-    continue-on-error: true
-    run: |
-      npx playwright test --reporter=json 1>playwright-results.json 2>playwright-stderr.txt || true
 ---
 # Playwright Test Evaluation
 
-You are a QA engineer evaluating automated Playwright E2E test results for PR #`${{ github.event.pull_request.number }}` in `${{ github.repository }}`.
+You are a QA engineer evaluating automated Playwright E2E tests for PR #`${{ github.event.pull_request.number }}` in `${{ github.repository }}`.
 
 ## Steps
 
-1. Read the following files to understand the test run:
-   - `playwright-results.json` — structured JSON output from Playwright (suites, specs, results, errors)
-   - `playwright-stderr.txt` — any stderr output or warnings during the run
-   - `tests/` directory — the actual test source files
-   - `playwright.config.js` — test configuration (browser, baseURL, timeouts)
+1. Set up the environment and run the tests:
+   ```bash
+   node --version
+   npm ci
+   npx playwright install --with-deps chromium
+   npx playwright test --reporter=json > playwright-results.json 2>playwright-stderr.txt || true
+   ```
 
-2. Analyse the results thoroughly:
+2. Read the results and source files:
+   - `playwright-results.json` — structured JSON with test suites, specs, statuses, errors, durations
+   - `playwright-stderr.txt` — any warnings or errors from the runner
+   - `tests/` directory — the actual test source files
+   - `playwright.config.js` — configuration (browser, baseURL, timeouts)
+
+3. Analyse the results thoroughly:
    - Total tests: how many passed, failed, skipped, timed out
-   - For each failed test: extract the exact error message, the failing assertion, the step where it broke, and the likely root cause
-   - For flaky tests: note if the failure looks environmental (network timeout, selector timing) vs a real regression
+   - For each failed test: exact error message, failing assertion, step where it broke, likely root cause
+   - For flaky-looking failures: distinguish environmental (network timeout, selector timing) from real regressions
    - Test quality: are selectors resilient, are assertions meaningful, are edge cases covered?
    - Coverage gaps: what user flows or scenarios are NOT tested that should be?
 
-3. Post a comment on PR #`${{ github.event.pull_request.number }}` with this exact structure:
+4. Post a comment on PR #`${{ github.event.pull_request.number }}` with this structure:
 
    ## 🎭 Playwright Test Evaluation
 
    **Result:** ✅ All X tests passed | ❌ X of Y tests failed
 
    ### Test Results
-   Table with columns: Test name | Status | Duration | Browser
+   | Test | Status | Duration | Browser |
+   |------|--------|----------|---------|
 
    ### Failure Analysis
+   *(omit if all tests passed)*
    For each failure:
    - **Test:** name
    - **Error:** exact error message
